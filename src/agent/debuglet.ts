@@ -290,7 +290,7 @@ export class Debuglet extends EventEmitter {
       Promise<FindFilesResult> {
     const fileStats = await scanner.scan(shouldHash, baseDir, /.js$|.js.map$/);
     const jsStats = fileStats.selectStats(/.js$/);
-    const mapFiles = fileStats.selectFiles(/.js.map$/, process.cwd());
+    const mapFiles = fileStats.selectFiles(/.js.map$/, baseDir);
     const errors = fileStats.errors();
     return {jsStats, mapFiles, errors, hash: fileStats.hash};
   }

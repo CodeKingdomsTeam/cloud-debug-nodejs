@@ -102,6 +102,11 @@ async function processSourcemap(
                         // resolve the paths relative to the map file so that
                         // they are relative to the process's current working
                         // directory
+
+                        if (path.isAbsolute(relPath)) {
+                          return relPath;
+                        }
+                        
                         return path.normalize(path.join(parentDir, relPath));
                       });
 
