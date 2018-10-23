@@ -104,7 +104,7 @@ class ScanResultsImpl implements ScanResults {
   selectFiles(regex: RegExp, baseDir?: string): string[] {
     // ensure the base directory has only a single trailing path separator
 
-    if(baseDir)
+    if(baseDir) {
         baseDir = path.normalize(baseDir + path.sep);
     }
     return Object.keys(this.stats)
