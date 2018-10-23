@@ -101,7 +101,7 @@ class ScanResultsImpl implements ScanResults {
    *  from which all of the returned paths should be relative
    *  to.
    */
-  selectFiles(regex: RegExp, baseDir: string): string[] {
+  selectFiles(regex: RegExp, baseDir?: string): string[] {
     // ensure the base directory has only a single trailing path separator
     baseDir = path.normalize(baseDir + path.sep);
     return Object.keys(this.stats)
