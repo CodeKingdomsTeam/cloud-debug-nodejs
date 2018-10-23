@@ -42,7 +42,7 @@ export interface ScanResults {
   errors(): Map<string, Error>;
   all(): ScanStats;
   selectStats(regex: RegExp): ScanStats;
-  selectFiles(regex: RegExp, baseDir: string): string[];
+  selectFiles(regex: RegExp, baseDir?: string): string[];
   hash?: string;
 }
 
@@ -101,15 +101,24 @@ class ScanResultsImpl implements ScanResults {
    *  from which all of the returned paths should be relative
    *  to.
    */
-  selectFiles(regex: RegExp, baseDir: string): string[] {
+  selectFiles(regex: RegExp, baseDir?: string): string[] {
     // ensure the base directory has only a single trailing path separator
-    baseDir = path.normalize(baseDir + path.sep);
+
+    if(baseDir)
+        baseDir = path.normalize(baseDir + path.sep);
+    }
     return Object.keys(this.stats)
         .filter((file) => {
           return file && regex.test(file);
         })
         .map((file) => {
-          return path.normalize(file).replace(baseDir, '');
+        const normalized = path.normalize(file);
+        
+        if(baseDir) {
+            return normalized.replace(baseDir, '');
+        } else {
+            return normalized;
+        }
         });
   }
 }
