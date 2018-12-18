@@ -16,18 +16,14 @@
 
 // TODO: Unify some common code with state.ts in future PRs.
 
+import is from '@sindresorhus/is';
 import * as inspector from 'inspector';
-import * as lodash from 'lodash';
 import * as util from 'util';
 
-import {debugAssert} from '../util/debug-assert';
-
-const isEmpty = lodash.isEmpty;
-
 import {StatusMessage} from '../../client/stackdriver/status-message';
-
 import * as stackdriver from '../../types/stackdriver';
 import {ResolvedDebugAgentConfig} from '../config';
+import {debugAssert} from '../util/debug-assert';
 import {V8Inspector} from '../v8/v8inspector';
 
 const assert = debugAssert(!!process.env.CLOUD_DEBUG_ASSERTIONS);
@@ -38,6 +34,7 @@ const NATIVE_PROPERTY_MESSAGE_INDEX = 1;
 const GETTER_MESSAGE_INDEX = 2;
 const ARG_LOCAL_LIMIT_MESSAGE_INDEX = 3;
 
+const FILE_PROTOCOL = 'file://';
 
 /**
  * Checks that the provided expressions will not have side effects and
@@ -276,7 +273,10 @@ class StateResolver {
     if (this.scriptmapper[scriptId].url === undefined) {
       return '';
     }
-    return this.scriptmapper[scriptId].url;
+    const scriptUrl = this.scriptmapper[scriptId].url;
+    // In Node 11+, non-internal files are formatted as URLs, so get just the
+    // path.
+    return StateResolver.stripFileProtocol_(scriptUrl);
   }
 
   resolveRelativePath_(frame: inspector.Debugger.CallFrame): string {
@@ -284,18 +284,25 @@ class StateResolver {
     return this.stripCurrentWorkingDirectory_(fullPath);
   }
 
+  static stripFileProtocol_(path: string) {
+    return path.toLowerCase().startsWith(FILE_PROTOCOL) ?
+        path.substr(FILE_PROTOCOL.length) :
+        path;
+  }
+
   stripCurrentWorkingDirectory_(path: string): string {
     // Strip 1 extra character to remove the slash.
-    return path.substr((this.config.workingDirectory!).length + 1);
+    return StateResolver.stripFileProtocol_(path).substr(
+        (this.config.workingDirectory!).length + 1);
   }
 
   isPathInCurrentWorkingDirectory_(path: string): boolean {
-    // return true;
-    return path.indexOf(this.config.workingDirectory) === 0;
+    return StateResolver.stripFileProtocol_(path).indexOf(
+               this.config.workingDirectory) === 0;
   }
 
   isPathInNodeModulesDirectory_(path: string): boolean {
-    return path.indexOf('node_modules') === 0;
+    return StateResolver.stripFileProtocol_(path).indexOf('node_modules') === 0;
   }
 
   resolveFrame_(frame: inspector.Debugger.CallFrame, underFrameCap: boolean):
@@ -315,7 +322,7 @@ class StateResolver {
     } else {
       locals = this.resolveLocalsList_(frame);
 
-      if (isEmpty(locals)) {
+      if (is.emptyArray(locals)) {
         locals = [];
       }
     }
@@ -378,7 +385,7 @@ class StateResolver {
       const result = this.v8Inspector.getProperties(
           {objectId: frame.scopeChain[i].object.objectId as string});
       // TODO: Handle when result.error exists.
-      if (result.response && !isEmpty(result.response.result)) {
+      if (result.response && !is.emptyArray(result.response.result)) {
         for (let j = 0; j < result.response.result.length; ++j) {
           if (!usedNames[result.response.result[j].name]) {
             // It's a valid variable that belongs in the locals list

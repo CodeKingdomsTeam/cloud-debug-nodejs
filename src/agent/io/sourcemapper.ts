@@ -15,14 +15,13 @@
  */
 
 import * as fs from 'fs';
-import * as _ from 'lodash';
 import * as path from 'path';
+import * as promisify from 'pify';
 import * as sourceMap from 'source-map';
 
 import {findScriptsFuzzy} from '../util/utils';
 
-const promisify = require('util.promisify');
-const pLimit = require('p-limit');
+import pLimit = require('p-limit');
 
 const CONCURRENCY = 10;
 const readFilep = promisify(fs.readFile);
@@ -52,7 +51,7 @@ async function processSourcemap(
     infoMap: Map<string, MapInfoInput>, mapPath: string) {
   // this handles the case when the path is undefined, null, or
   // the empty string
-  if (!mapPath || !_.endsWith(mapPath, MAP_EXT)) {
+  if (!mapPath || !mapPath.endsWith(MAP_EXT)) {
     throw new Error(`The path ${mapPath} does not specify a sourcemap file`);
   }
   mapPath = path.normalize(mapPath);
